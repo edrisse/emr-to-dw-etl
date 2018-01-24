@@ -37,7 +37,6 @@ create table tarv_status (
   event varchar(100) not null,
   event_date date not null,
   next_event_date date,
-  reason varchar(2000),
   notified bit
 );
 alter table tarv_status add constraint fk_tarv_status_patient foreign key (patient_id) references patient (id);
