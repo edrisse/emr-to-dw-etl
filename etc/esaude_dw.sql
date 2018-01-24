@@ -37,3 +37,8 @@ create table location (
   description varchar(200)
 );
 
+create index tarv_status_patient on tarv_status (patient_id);
+
+--not improving performance so much so far
+--create index tarv_status_date on tarv_status (event_date);
+
