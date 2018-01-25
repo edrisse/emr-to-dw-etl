@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <transformation>
   <info>
-    <name>migrate-tarv_status-fila</name>
+    <name>generate-unnotified-abandons</name>
     <description />
     <extended_description />
     <trans_version />
@@ -427,69 +427,14 @@
     <clusterschemas>
     </clusterschemas>
     <created_user>-</created_user>
-    <created_date>2018/01/23 15:22:55.530</created_date>
+    <created_date>2018/01/25 12:05:56.389</created_date>
     <modified_user>-</modified_user>
-    <modified_date>2018/01/23 15:22:55.530</modified_date>
+    <modified_date>2018/01/25 12:05:56.389</modified_date>
     <key_for_session_key>H4sIAAAAAAAAAAMAAAAAAAAAAAA=</key_for_session_key>
     <is_key_private>N</is_key_private>
   </info>
   <notepads>
   </notepads>
-  <connection>
-    <name>EMR (OpenMRS)</name>
-    <server>${EMR_HOST}</server>
-    <type>MYSQL</type>
-    <access>Native</access>
-    <database>${EMR_DATABASE}</database>
-    <port>${EMR_PORT}</port>
-    <username>${EMR_USER}</username>
-    <password>${EMR_PASSWORD}</password>
-    <servername />
-    <data_tablespace />
-    <index_tablespace />
-    <attributes>
-      <attribute>
-        <code>FORCE_IDENTIFIERS_TO_LOWERCASE</code>
-        <attribute>N</attribute>
-      </attribute>
-      <attribute>
-        <code>FORCE_IDENTIFIERS_TO_UPPERCASE</code>
-        <attribute>N</attribute>
-      </attribute>
-      <attribute>
-        <code>IS_CLUSTERED</code>
-        <attribute>N</attribute>
-      </attribute>
-      <attribute>
-        <code>PORT_NUMBER</code>
-        <attribute>${EMR_PORT}</attribute>
-      </attribute>
-      <attribute>
-        <code>PRESERVE_RESERVED_WORD_CASE</code>
-        <attribute>Y</attribute>
-      </attribute>
-      <attribute>
-        <code>QUOTE_ALL_FIELDS</code>
-        <attribute>N</attribute>
-      </attribute>
-      <attribute>
-        <code>STREAM_RESULTS</code>
-        <attribute>Y</attribute>
-      </attribute>
-      <attribute>
-        <code>SUPPORTS_BOOLEAN_DATA_TYPE</code>
-        <attribute>Y</attribute>
-      </attribute>
-      <attribute>
-        <code>SUPPORTS_TIMESTAMP_DATA_TYPE</code>
-        <attribute>Y</attribute>
-      </attribute>
-      <attribute>
-        <code>USE_POOLING</code>
-        <attribute>N</attribute>
-      </attribute>
-    </attributes>
-  </connection>
   <connection>
     <name>eSaude DW</name>
     <server>${ESAUDE_DW_HOST}</server>
@@ -547,23 +492,106 @@
   </connection>
   <order>
     <hop>
-      <from>Load Patient DW</from>
-      <to>Fetch Pickups</to>
+      <from>Load Active ART Statuses</from>
+      <to>Add Days to Unnotified Abandon</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>Fetch Pickups</from>
-      <to>Add Constants</to>
+      <from>Add Days to Unnotified Abandon</from>
+      <to>Has Next Event Date?</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>Add Constants</from>
-      <to>Save to TARV_STATUS DW</to>
+      <from>Has Next Event Date?</from>
+      <to>Calculate Unnotified Abandon based on Next Event Date</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Has Next Event Date?</from>
+      <to>Calculate Unnotified Abandon based on Event Date</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Calculate Unnotified Abandon based on Next Event Date</from>
+      <to>Database join</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Calculate Unnotified Abandon based on Event Date</from>
+      <to>Database join</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Database join</from>
+      <to>Abandoned?</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Add constants</from>
+      <to>Save to ART_STATUS</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Abandoned?</from>
+      <to>Get System Date</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Get System Date</from>
+      <to>Not Future?</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Not Future?</from>
+      <to>Add constants</to>
       <enabled>Y</enabled>
     </hop>
   </order>
   <step>
-    <name>Add Constants</name>
+    <name>Abandoned?</name>
+    <type>FilterRows</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <send_true_to>Get System Date</send_true_to>
+    <send_false_to />
+    <compare>
+      <condition>
+        <negated>N</negated>
+        <leftvalue>abandon</leftvalue>
+        <function>=</function>
+        <rightvalue />
+        <value>
+          <name>constant</name>
+          <type>Integer</type>
+          <text>1</text>
+          <length>-1</length>
+          <precision>0</precision>
+          <isnull>N</isnull>
+          <mask>####0;-####0</mask>
+        </value>
+      </condition>
+    </compare>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>1072</xloc>
+      <yloc>256</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Add Days to Unnotified Abandon</name>
     <type>Constant</type>
     <description />
     <distribute>Y</distribute>
@@ -575,25 +603,13 @@
     </partitioning>
     <fields>
       <field>
-        <name>event</name>
-        <type>String</type>
+        <name>days_to_unnotified_abandon</name>
+        <type>Number</type>
         <format />
         <currency />
         <decimal />
         <group />
-        <nullif>FILA</nullif>
-        <length>-1</length>
-        <precision>-1</precision>
-        <set_empty_string>N</set_empty_string>
-      </field>
-      <field>
-        <name>status</name>
-        <type>String</type>
-        <format />
-        <currency />
-        <decimal />
-        <group />
-        <nullif>ACTIVE</nullif>
+        <nullif>60</nullif>
         <length>-1</length>
         <precision>-1</precision>
         <set_empty_string>N</set_empty_string>
@@ -607,13 +623,153 @@
       </output>
     </remotesteps>
     <GUI>
-      <xloc>544</xloc>
-      <yloc>192</yloc>
+      <xloc>304</xloc>
+      <yloc>272</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
   <step>
-    <name>Fetch Pickups</name>
+    <name>Add constants</name>
+    <type>Constant</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <fields>
+      <field>
+        <name>status</name>
+        <type>String</type>
+        <format />
+        <currency />
+        <decimal />
+        <group />
+        <nullif>ABANDON</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>event</name>
+        <type>String</type>
+        <format />
+        <currency />
+        <decimal />
+        <group />
+        <nullif>ABANDON</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+      <field>
+        <name>notified</name>
+        <type>Boolean</type>
+        <format />
+        <currency />
+        <decimal />
+        <group />
+        <nullif>false</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+    </fields>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>1440</xloc>
+      <yloc>256</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Calculate Unnotified Abandon based on Event Date</name>
+    <type>Calculator</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <calculation>
+      <field_name>unnotified_abandon_date</field_name>
+      <calc_type>ADD_DAYS</calc_type>
+      <field_a>event_date</field_a>
+      <field_b>days_to_unnotified_abandon</field_b>
+      <field_c />
+      <value_type>None</value_type>
+      <value_length>-1</value_length>
+      <value_precision>-1</value_precision>
+      <remove>N</remove>
+      <conversion_mask />
+      <decimal_symbol />
+      <grouping_symbol />
+      <currency_symbol />
+    </calculation>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>720</xloc>
+      <yloc>368</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Calculate Unnotified Abandon based on Next Event Date</name>
+    <type>Calculator</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <calculation>
+      <field_name>unnotified_abandon_date</field_name>
+      <calc_type>ADD_DAYS</calc_type>
+      <field_a>next_event_date</field_a>
+      <field_b>days_to_unnotified_abandon</field_b>
+      <field_c />
+      <value_type>None</value_type>
+      <value_length>-1</value_length>
+      <value_precision>-1</value_precision>
+      <remove>N</remove>
+      <conversion_mask />
+      <decimal_symbol />
+      <grouping_symbol />
+      <currency_symbol />
+    </calculation>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>720</xloc>
+      <yloc>128</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Database join</name>
     <type>DBJoin</type>
     <description />
     <distribute>Y</distribute>
@@ -623,21 +779,28 @@
       <method>none</method>
       <schema_name />
     </partitioning>
-    <connection>EMR (OpenMRS)</connection>
-    <rowlimit>0</rowlimit>
-    <sql>select encounter.encounter_datetime pickup_date, obs.value_datetime next_pickup_date from encounter
-left join obs on (obs.encounter_id = encounter.encounter_id and obs.concept_id = 5096)
-where encounter.encounter_type = 18
-  and encounter.voided = false
-  and obs.voided = false
-  and encounter.patient_id = ?
+    <connection>eSaude DW</connection>
+    <rowlimit>1</rowlimit>
+    <sql>select not exists (select * from art_status
+	where art_status.patient_id = ?
+	  and art_status.event_date > ?
+	  and art_status.event_date &lt; ?
+	) as abandon
 </sql>
-    <outer_join>N</outer_join>
+    <outer_join>Y</outer_join>
     <replace_vars>N</replace_vars>
     <parameter>
       <field>
-        <name>id</name>
+        <name>patient_id</name>
         <type>Number</type>
+      </field>
+      <field>
+        <name>event_date</name>
+        <type>Date</type>
+      </field>
+      <field>
+        <name>unnotified_abandon_date</name>
+        <type>Date</type>
       </field>
     </parameter>
     <cluster_schema />
@@ -648,13 +811,77 @@ where encounter.encounter_type = 18
       </output>
     </remotesteps>
     <GUI>
-      <xloc>368</xloc>
-      <yloc>192</yloc>
+      <xloc>944</xloc>
+      <yloc>256</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
   <step>
-    <name>Load Patient DW</name>
+    <name>Get System Date</name>
+    <type>SystemInfo</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <fields>
+      <field>
+        <name>current_date</name>
+        <type>system date (fixed)</type>
+      </field>
+    </fields>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>1200</xloc>
+      <yloc>256</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Has Next Event Date?</name>
+    <type>FilterRows</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <send_true_to>Calculate Unnotified Abandon based on Next Event Date</send_true_to>
+    <send_false_to>Calculate Unnotified Abandon based on Event Date</send_false_to>
+    <compare>
+      <condition>
+        <negated>N</negated>
+        <leftvalue>next_event_date</leftvalue>
+        <function>IS NOT NULL</function>
+        <rightvalue />
+      </condition>
+    </compare>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>512</xloc>
+      <yloc>272</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Load Active ART Statuses</name>
     <type>TableInput</type>
     <description />
     <distribute>Y</distribute>
@@ -665,7 +892,8 @@ where encounter.encounter_type = 18
       <schema_name />
     </partitioning>
     <connection>eSaude DW</connection>
-    <sql>select id from patient</sql>
+    <sql>select patient_id, event_date, next_event_date from art_status
+where art_status.status = 'ACTIVE'</sql>
     <limit>0</limit>
     <lookup />
     <execute_each_row>N</execute_each_row>
@@ -679,13 +907,47 @@ where encounter.encounter_type = 18
       </output>
     </remotesteps>
     <GUI>
-      <xloc>192</xloc>
-      <yloc>192</yloc>
+      <xloc>96</xloc>
+      <yloc>272</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
   <step>
-    <name>Save to TARV_STATUS DW</name>
+    <name>Not Future?</name>
+    <type>FilterRows</type>
+    <description />
+    <distribute>Y</distribute>
+    <custom_distribution />
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name />
+    </partitioning>
+    <send_true_to>Add constants</send_true_to>
+    <send_false_to />
+    <compare>
+      <condition>
+        <negated>N</negated>
+        <leftvalue>unnotified_abandon_date</leftvalue>
+        <function>&lt;=</function>
+        <rightvalue>current_date</rightvalue>
+      </condition>
+    </compare>
+    <cluster_schema />
+    <remotesteps>
+      <input>
+      </input>
+      <output>
+      </output>
+    </remotesteps>
+    <GUI>
+      <xloc>1312</xloc>
+      <yloc>256</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+  <step>
+    <name>Save to ART_STATUS</name>
     <type>TableOutput</type>
     <description />
     <distribute>Y</distribute>
@@ -715,23 +977,23 @@ where encounter.encounter_type = 18
     <fields>
       <field>
         <column_name>patient_id</column_name>
-        <stream_name>id</stream_name>
-      </field>
-      <field>
-        <column_name>event_date</column_name>
-        <stream_name>pickup_date</stream_name>
-      </field>
-      <field>
-        <column_name>event</column_name>
-        <stream_name>event</stream_name>
+        <stream_name>patient_id</stream_name>
       </field>
       <field>
         <column_name>status</column_name>
         <stream_name>status</stream_name>
       </field>
       <field>
-        <column_name>next_event_date</column_name>
-        <stream_name>next_pickup_date</stream_name>
+        <column_name>event</column_name>
+        <stream_name>event</stream_name>
+      </field>
+      <field>
+        <column_name>notified</column_name>
+        <stream_name>notified</stream_name>
+      </field>
+      <field>
+        <column_name>event_date</column_name>
+        <stream_name>unnotified_abandon_date</stream_name>
       </field>
     </fields>
     <cluster_schema />
@@ -742,8 +1004,8 @@ where encounter.encounter_type = 18
       </output>
     </remotesteps>
     <GUI>
-      <xloc>752</xloc>
-      <yloc>192</yloc>
+      <xloc>1584</xloc>
+      <yloc>256</yloc>
       <draw>Y</draw>
     </GUI>
   </step>
