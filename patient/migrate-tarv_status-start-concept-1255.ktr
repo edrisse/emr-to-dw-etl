@@ -703,7 +703,7 @@ where question.name = 'GESTÃO DE TARV'
     </partitioning>
     <connection>eSaude DW</connection>
     <schema />
-    <table>tarv_status</table>
+    <table>art_status</table>
     <commit>1000</commit>
     <truncate>N</truncate>
     <ignore_errors>N</ignore_errors>

@@ -1,5 +1,5 @@
 drop table pregnancy;
-drop table tarv_status;
+drop table art_status;
 drop table breastfeed;
 drop table patient;
 drop table location;
@@ -31,7 +31,7 @@ create table breastfeed (
 );
 alter table breastfeed add constraint fk_breastfeed_patient foreign key (patient_id) references patient (id);
 
-create table tarv_status (
+create table art_status (
   patient_id int(10) not null,
   status varchar(100) not null,
   event varchar(100) not null,
@@ -39,5 +39,5 @@ create table tarv_status (
   next_event_date date,
   notified bit
 );
-alter table tarv_status add constraint fk_tarv_status_patient foreign key (patient_id) references patient (id);
+alter table art_status add constraint fk_tarv_status_patient foreign key (patient_id) references patient (id);
 
