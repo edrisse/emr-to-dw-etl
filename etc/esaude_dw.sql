@@ -44,3 +44,9 @@ create table art_status (
 );
 alter table art_status add constraint fk_tarv_status_patient foreign key (patient_id) references patient (id);
 
+create table tb_treatment (
+	patient_id int(10) not null,
+	date date not null
+);
+alter table tb_treatment add constraint fk_tb_treatment_patient foreign key (patient_id) references patient (id);
+
