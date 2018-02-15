@@ -1,7 +1,8 @@
-drop table pregnancy;
-drop table art_status;
-drop table patient;
-drop table location;
+create database esaude_dw;
+use esaude_dw;
+
+GRANT ALL PRIVILEGES ON esaude_dw.* TO openmrs;
+FLUSH PRIVILEGES;
 
 create table location (
   id int(10) not null,
