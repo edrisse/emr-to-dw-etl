@@ -50,3 +50,53 @@ create table tb_treatment (
 );
 alter table tb_treatment add constraint fk_tb_treatment_patient foreign key (patient_id) references patient (id);
 
+create table viral_load (
+	patient_id int(10) not null,
+	date date not null,
+        age_in_months int(2) not null,
+        age_in_years int(2) not null,
+	value decimal(19, 6) not null
+);
+alter table viral_load add constraint fk_viral_load_patient foreign key (patient_id) references patient (id);
+
+--alter table art_status add after_one_year_status_id int(10);
+--alter table art_status add after_two_year_status_id int(10);
+--alter table art_status add after_three_year_status_id int(10);
+--alter table art_status add constraint fk_art_status_to_one_year foreign key (after_one_year_status_id) references art_status (id);
+--alter table art_status add constraint fk_art_status_to_two_year foreign key (after_two_year_status_id) references art_status (id);
+--alter table art_status add constraint fk_art_status_to_three_year foreign key (after_three_year_status_id) references art_status (id);
+
+create table art_status_after_period (
+	art_status_id int(10) not null,
+	months int not null,
+	art_status_after_period_id  int(10) not null
+);
+alter table art_status_after_period add constraint fk_after_period_status_status foreign key (art_status_id) references art_status (id);
+alter table art_status_after_period add constraint fk_after_period_status_after_status foreign key (art_status_after_period_id) references art_status (id);
+
+DELIMITER $$
+CREATE FUNCTION esaude_dw.inclusion_start_date_from_retention (base_date date, months int) 
+RETURNS date
+DETERMINISTIC
+BEGIN 
+  DECLARE start_date date;
+  IF months = 12 THEN
+	SET start_date = date_add(base_date, interval -24 month);
+  ELSE
+	SET start_date = date_add(base_date, interval -months-3 month);
+  END IF;
+  RETURN start_date;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE FUNCTION esaude_dw.inclusion_end_date_from_retention (base_date date, months int) 
+RETURNS date
+DETERMINISTIC
+BEGIN 
+  DECLARE end_date date;
+  SET end_date = date_add(base_date, interval -months month);
+  RETURN end_date;
+END$$
+DELIMITER ;
+
